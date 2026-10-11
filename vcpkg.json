@@ -13,5 +13,8 @@
     "spdlog",
     "toml11",
     "xbyak"
+  ],
+  "overrides": [
+    { "name": "fmt", "version": "12.2.0", "port-version": 1 }
   ]
 }
