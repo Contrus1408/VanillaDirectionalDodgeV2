@@ -142,7 +142,7 @@ namespace
 	private:
 		void TryDodge()
 		{
-			const auto* ui = RE::UI::GetSingleton();
+					auto* ui = RE::UI::GetSingleton();
 			if (!ui || ui->GameIsPaused() || ui->IsMenuOpen(RE::Console::MENU_NAME)) {
 				return;
 			}
@@ -172,7 +172,7 @@ namespace
 
 			if (g_cfg.rotateToInput && (x != 0.0f || y != 0.0f)) {
 				if (const auto camYaw = GetCameraYaw()) {
-					player->SetRotationZ(NormalizeAngle(*camYaw + std::atan2(x, y)));
+					player->data.angle.z = NormalizeAngle(*camYaw + std::atan2(x, y));
 				}
 			}
 
