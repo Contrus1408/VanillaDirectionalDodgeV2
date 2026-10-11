@@ -116,15 +116,16 @@ namespace
 					continue;
 				}
 
-				// следим за состоянием клавиш движения
+								// следим за состоянием клавиш движения
 				if (ue) {
-					if (btn->userEvent == ue->forward) {
+					const auto& evName = btn->QUserEvent();
+					if (evName == ue->forward) {
 						_forward = btn->IsPressed();
-					} else if (btn->userEvent == ue->back) {
+					} else if (evName == ue->back) {
 						_back = btn->IsPressed();
-					} else if (btn->userEvent == ue->strafeLeft) {
+					} else if (evName == ue->strafeLeft) {
 						_left = btn->IsPressed();
-					} else if (btn->userEvent == ue->strafeRight) {
+					} else if (evName == ue->strafeRight) {
 						_right = btn->IsPressed();
 					}
 				}
