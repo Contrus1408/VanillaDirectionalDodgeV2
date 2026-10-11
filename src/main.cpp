@@ -1,6 +1,6 @@
 // VanillaDirectionalDodge
-// РќР°Р¶Р°С‚РёРµ РєР»Р°РІРёС€Рё -> РїРѕРІРѕСЂРѕС‚ РїРµСЂСЃРѕРЅР°Р¶Р° РІ СЃС‚РѕСЂРѕРЅСѓ РґРІРёР¶РµРЅРёСЏ (WASD РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РєР°РјРµСЂС‹)
-// -> РІСЂРµРјРµРЅРЅС‹Р№ РІС…РѕРґ РІ СЃРєСЂС‹С‚РЅРѕСЃС‚СЊ -> РІР°РЅРёР»СЊРЅС‹Р№ РїРµСЂРµРєР°С‚ -> РІРѕР·РІСЂР°С‚ СЃРѕСЃС‚РѕСЏРЅРёСЏ Рё РєР°РјРµСЂС‹.
+// Р СњР В°Р В¶Р В°РЎвЂљР С‘Р Вµ Р С”Р В»Р В°Р Р†Р С‘РЎв‚¬Р С‘ -> Р С—Р С•Р Р†Р С•РЎР‚Р С•РЎвЂљ Р С—Р ВµРЎР‚РЎРѓР С•Р Р…Р В°Р В¶Р В° Р Р† РЎРѓРЎвЂљР С•РЎР‚Р С•Р Р…РЎС“ Р Т‘Р Р†Р С‘Р В¶Р ВµР Р…Р С‘РЎРЏ (WASD Р С•РЎвЂљР Р…Р С•РЎРѓР С‘РЎвЂљР ВµР В»РЎРЉР Р…Р С• Р С”Р В°Р СР ВµРЎР‚РЎвЂ№)
+// -> Р Р†РЎР‚Р ВµР СР ВµР Р…Р Р…РЎвЂ№Р в„– Р Р†РЎвЂ¦Р С•Р Т‘ Р Р† РЎРѓР С”РЎР‚РЎвЂ№РЎвЂљР Р…Р С•РЎРѓРЎвЂљРЎРЉ -> Р Р†Р В°Р Р…Р С‘Р В»РЎРЉР Р…РЎвЂ№Р в„– Р С—Р ВµРЎР‚Р ВµР С”Р В°РЎвЂљ -> Р Р†Р С•Р В·Р Р†РЎР‚Р В°РЎвЂљ РЎРѓР С•РЎРѓРЎвЂљР С•РЎРЏР Р…Р С‘РЎРЏ Р С‘ Р С”Р В°Р СР ВµРЎР‚РЎвЂ№.
 
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
@@ -8,6 +8,7 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <numbers>
@@ -25,17 +26,17 @@ namespace
 	struct Config
 	{
 		std::uint32_t key = 47;          // DirectInput scancode, 47 = V
-		std::uint32_t cooldownMs = 800;  // РїР°СѓР·Р° РјРµР¶РґСѓ РїРµСЂРµРєР°С‚Р°РјРё
-		bool rotateToInput = true;       // СЂР°Р·РІРѕСЂР°С‡РёРІР°С‚СЊ РїРµСЂСЃРѕРЅР°Р¶Р° РїРѕ WASD
+		std::uint32_t cooldownMs = 800;  // Р С—Р В°РЎС“Р В·Р В° Р СР ВµР В¶Р Т‘РЎС“ Р С—Р ВµРЎР‚Р ВµР С”Р В°РЎвЂљР В°Р СР С‘
+		bool rotateToInput = true;       // РЎР‚Р В°Р В·Р Р†Р С•РЎР‚Р В°РЎвЂЎР С‘Р Р†Р В°РЎвЂљРЎРЉ Р С—Р ВµРЎР‚РЎРѓР С•Р Р…Р В°Р В¶Р В° Р С—Р С• WASD
 		std::vector<std::string> events{ "SneakSprintStartRoll" };
 
-		// РџРµСЂРµРєР°С‚ РїСЂРёРЅРёРјР°РµС‚СЃСЏ РіСЂР°С„РѕРј Р°РЅРёРјР°С†РёР№ С‚РѕР»СЊРєРѕ РІ СЃРѕСЃС‚РѕСЏРЅРёРё СЃРєСЂС‹С‚РЅРѕСЃС‚Рё,
-		// РїРѕСЌС‚РѕРјСѓ РІРЅРµ СЃРєСЂС‹С‚РЅРѕСЃС‚Рё РјС‹ РІСЂРµРјРµРЅРЅРѕ РІС…РѕРґРёРј РІ РЅРµС‘ Рё РїРѕС‚РѕРј РІС‹С…РѕРґРёРј.
+		// Р СџР ВµРЎР‚Р ВµР С”Р В°РЎвЂљ Р С—РЎР‚Р С‘Р Р…Р С‘Р СР В°Р ВµРЎвЂљРЎРѓРЎРЏ Р С–РЎР‚Р В°РЎвЂћР С•Р С Р В°Р Р…Р С‘Р СР В°РЎвЂ Р С‘Р в„– РЎвЂљР С•Р В»РЎРЉР С”Р С• Р Р† РЎРѓР С•РЎРѓРЎвЂљР С•РЎРЏР Р…Р С‘Р С‘ РЎРѓР С”РЎР‚РЎвЂ№РЎвЂљР Р…Р С•РЎРѓРЎвЂљР С‘,
+		// Р С—Р С•РЎРЊРЎвЂљР С•Р СРЎС“ Р Р†Р Р…Р Вµ РЎРѓР С”РЎР‚РЎвЂ№РЎвЂљР Р…Р С•РЎРѓРЎвЂљР С‘ Р СРЎвЂ№ Р Р†РЎР‚Р ВµР СР ВµР Р…Р Р…Р С• Р Р†РЎвЂ¦Р С•Р Т‘Р С‘Р С Р Р† Р Р…Р ВµРЎвЂ Р С‘ Р С—Р С•РЎвЂљР С•Р С Р Р†РЎвЂ№РЎвЂ¦Р С•Р Т‘Р С‘Р С.
 		bool tempSneak = true;
-		std::uint32_t sneakEnterDelayMs = 120;  // РѕР¶РёРґР°РЅРёРµ, РїРѕРєР° РіСЂР°С„ РїРµСЂРµР№РґС‘С‚ РІ sneak-СЃРѕСЃС‚РѕСЏРЅРёРµ
-		std::uint32_t rollDurationMs = 1000;    // СЃРєРѕР»СЊРєРѕ Р¶РґР°С‚СЊ РґРѕ РІС‹С…РѕРґР° РёР· СЃРєСЂС‹С‚РЅРѕСЃС‚Рё
-		bool restoreCamera = true;              // РІРµСЂРЅСѓС‚СЊ РІРёРґ (1-Рµ/3-Рµ Р»РёС†Рѕ) Рё РїРѕРІРѕСЂРѕС‚ РєР°РјРµСЂС‹
-		bool logGraphEvents = false;            // РїРёСЃР°С‚СЊ РІ Р»РѕРі СЃРѕР±С‹С‚РёСЏ РіСЂР°С„Р° (РґР»СЏ РѕС‚Р»Р°РґРєРё)
+		std::uint32_t sneakEnterDelayMs = 120;  // Р С•Р В¶Р С‘Р Т‘Р В°Р Р…Р С‘Р Вµ, Р С—Р С•Р С”Р В° Р С–РЎР‚Р В°РЎвЂћ Р С—Р ВµРЎР‚Р ВµР в„–Р Т‘РЎвЂРЎвЂљ Р Р† sneak-РЎРѓР С•РЎРѓРЎвЂљР С•РЎРЏР Р…Р С‘Р Вµ
+		std::uint32_t rollDurationMs = 1000;    // РЎРѓР С”Р С•Р В»РЎРЉР С”Р С• Р В¶Р Т‘Р В°РЎвЂљРЎРЉ Р Т‘Р С• Р Р†РЎвЂ№РЎвЂ¦Р С•Р Т‘Р В° Р С‘Р В· РЎРѓР С”РЎР‚РЎвЂ№РЎвЂљР Р…Р С•РЎРѓРЎвЂљР С‘
+		bool restoreCamera = true;              // Р Р†Р ВµРЎР‚Р Р…РЎС“РЎвЂљРЎРЉ Р Р†Р С‘Р Т‘ (1-Р Вµ/3-Р Вµ Р В»Р С‘РЎвЂ Р С•) Р С‘ Р С—Р С•Р Р†Р С•РЎР‚Р С•РЎвЂљ Р С”Р В°Р СР ВµРЎР‚РЎвЂ№
+		bool logGraphEvents = false;            // Р С—Р С‘РЎРѓР В°РЎвЂљРЎРЉ Р Р† Р В»Р С•Р С– РЎРѓР С•Р В±РЎвЂ№РЎвЂљР С‘РЎРЏ Р С–РЎР‚Р В°РЎвЂћР В° (Р Т‘Р В»РЎРЏ Р С•РЎвЂљР В»Р В°Р Т‘Р С”Р С‘)
 		std::string sneakStartEvent = "SneakStart";
 		std::string sneakStopEvent = "SneakStop";
 
@@ -44,10 +45,14 @@ namespace
 			key = ::GetPrivateProfileIntA("General", "Key", static_cast<int>(key), kIniPath);
 			cooldownMs = ::GetPrivateProfileIntA("General", "CooldownMs", static_cast<int>(cooldownMs), kIniPath);
 			rotateToInput = ::GetPrivateProfileIntA("General", "RotateToInput", 1, kIniPath) != 0;
+			// Keep accidental INI values from creating instant repeats or very long lockouts.
+			cooldownMs = std::clamp(cooldownMs, 100u, 5000u);
 
 			tempSneak = ::GetPrivateProfileIntA("General", "TemporarySneak", 1, kIniPath) != 0;
 			sneakEnterDelayMs = ::GetPrivateProfileIntA("General", "SneakEnterDelayMs", static_cast<int>(sneakEnterDelayMs), kIniPath);
+			sneakEnterDelayMs = std::clamp(sneakEnterDelayMs, 0u, 500u);
 			rollDurationMs = ::GetPrivateProfileIntA("General", "RollDurationMs", static_cast<int>(rollDurationMs), kIniPath);
+			rollDurationMs = std::clamp(rollDurationMs, 300u, 2500u);
 			restoreCamera = ::GetPrivateProfileIntA("General", "RestoreCamera", 1, kIniPath) != 0;
 			logGraphEvents = ::GetPrivateProfileIntA("General", "LogGraphEvents", 0, kIniPath) != 0;
 
@@ -100,7 +105,7 @@ namespace
 		if (!cam) {
 			return std::nullopt;
 		}
-		// РєР°РјРµСЂР° Skyrim СЃРјРѕС‚СЂРёС‚ РІРґРѕР»СЊ Р»РѕРєР°Р»СЊРЅРѕР№ РѕСЃРё Y
+		// Р С”Р В°Р СР ВµРЎР‚Р В° Skyrim РЎРѓР СР С•РЎвЂљРЎР‚Р С‘РЎвЂљ Р Р†Р Т‘Р С•Р В»РЎРЉ Р В»Р С•Р С”Р В°Р В»РЎРЉР Р…Р С•Р в„– Р С•РЎРѓР С‘ Y
 		const auto& r = cam->world.rotate;
 		return std::atan2(r.entry[0][1], r.entry[1][1]);
 	}
@@ -112,7 +117,7 @@ namespace
 		return a < 0.0f ? a + twoPi : a;
 	}
 
-	// РІС‹РїРѕР»РЅРёС‚СЊ РґРµР№СЃС‚РІРёРµ РІ РіР»Р°РІРЅРѕРј РїРѕС‚РѕРєРµ РёРіСЂС‹ С‡РµСЂРµР· delayMs
+	// Р Р†РЎвЂ№Р С—Р С•Р В»Р Р…Р С‘РЎвЂљРЎРЉ Р Т‘Р ВµР в„–РЎРѓРЎвЂљР Р†Р С‘Р Вµ Р Р† Р С–Р В»Р В°Р Р†Р Р…Р С•Р С Р С—Р С•РЎвЂљР С•Р С”Р Вµ Р С‘Р С–РЎР‚РЎвЂ№ РЎвЂЎР ВµРЎР‚Р ВµР В· delayMs
 	template <class F>
 	void RunLater(std::uint32_t delayMs, F&& fn)
 	{
@@ -122,7 +127,7 @@ namespace
 		}).detach();
 	}
 
-	// ---- РѕС‚Р»Р°РґРѕС‡РЅС‹Р№ РїСЂРёС‘РјРЅРёРє СЃРѕР±С‹С‚РёР№ РіСЂР°С„Р° Р°РЅРёРјР°С†РёР№ РёРіСЂРѕРєР°
+	// ---- Р С•РЎвЂљР В»Р В°Р Т‘Р С•РЎвЂЎР Р…РЎвЂ№Р в„– Р С—РЎР‚Р С‘РЎвЂР СР Р…Р С‘Р С” РЎРѓР С•Р В±РЎвЂ№РЎвЂљР С‘Р в„– Р С–РЎР‚Р В°РЎвЂћР В° Р В°Р Р…Р С‘Р СР В°РЎвЂ Р С‘Р в„– Р С‘Р С–РЎР‚Р С•Р С”Р В°
 	class GraphSink final : public RE::BSTEventSink<RE::BSAnimationGraphEvent>
 	{
 	public:
@@ -171,7 +176,7 @@ namespace
 					continue;
 				}
 
-				// СЃР»РµРґРёРј Р·Р° СЃРѕСЃС‚РѕСЏРЅРёРµРј РєР»Р°РІРёС€ РґРІРёР¶РµРЅРёСЏ
+				// РЎРѓР В»Р ВµР Т‘Р С‘Р С Р В·Р В° РЎРѓР С•РЎРѓРЎвЂљР С•РЎРЏР Р…Р С‘Р ВµР С Р С”Р В»Р В°Р Р†Р С‘РЎв‚¬ Р Т‘Р Р†Р С‘Р В¶Р ВµР Р…Р С‘РЎРЏ
 				if (ue) {
 					const auto& evName = btn->QUserEvent();
 					if (evName == ue->forward) {
@@ -187,7 +192,7 @@ namespace
 
 				if (btn->GetDevice() == RE::INPUT_DEVICE::kKeyboard &&
 					btn->GetIDCode() == g_cfg.key &&
-					btn->IsDown()) {
+					btn->IsPressed()) {
 					TryDodge();
 				}
 			}
@@ -199,7 +204,9 @@ namespace
 		void TryDodge()
 		{
 			auto* ui = RE::UI::GetSingleton();
-			if (!ui || ui->GameIsPaused() || ui->IsMenuOpen(RE::Console::MENU_NAME)) {
+			if (!ui || ui->GameIsPaused() || ui->IsMenuOpen(RE::Console::MENU_NAME) ||
+				ui->IsMenuOpen(RE::InventoryMenu::MENU_NAME) || ui->IsMenuOpen(RE::MagicMenu::MENU_NAME) ||
+				ui->IsMenuOpen(RE::MapMenu::MENU_NAME) || ui->IsMenuOpen(RE::JournalMenu::MENU_NAME)) {
 				return;
 			}
 
@@ -226,16 +233,16 @@ namespace
 				return;
 			}
 
-			// РЅР°РїСЂР°РІР»РµРЅРёРµ: WASD РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РєР°РјРµСЂС‹
+			// Р Р…Р В°Р С—РЎР‚Р В°Р Р†Р В»Р ВµР Р…Р С‘Р Вµ: WASD Р С•РЎвЂљР Р…Р С•РЎРѓР С‘РЎвЂљР ВµР В»РЎРЉР Р…Р С• Р С”Р В°Р СР ВµРЎР‚РЎвЂ№
 			const float x = (_right ? 1.0f : 0.0f) - (_left ? 1.0f : 0.0f);
 			const float y = (_forward ? 1.0f : 0.0f) - (_back ? 1.0f : 0.0f);
 
-			// Р·Р°РїРѕРјРёРЅР°РµРј РєР°РјРµСЂСѓ Р”Рћ Р»СЋР±С‹С… РёР·РјРµРЅРµРЅРёР№
+			// Р В·Р В°Р С—Р С•Р СР С‘Р Р…Р В°Р ВµР С Р С”Р В°Р СР ВµРЎР‚РЎС“ Р вЂќР С› Р В»РЎР‹Р В±РЎвЂ№РЎвЂ¦ Р С‘Р В·Р СР ВµР Р…Р ВµР Р…Р С‘Р в„–
 			auto* cam = RE::PlayerCamera::GetSingleton();
 			_wasFirstPerson = cam && cam->IsInFirstPerson();
 			_savedYaw = player->GetAngleZ();
 
-			// С†РµР»РµРІРѕР№ РїРѕРІРѕСЂРѕС‚ РїРµСЂСЃРѕРЅР°Р¶Р°
+			// РЎвЂ Р ВµР В»Р ВµР Р†Р С•Р в„– Р С—Р С•Р Р†Р С•РЎР‚Р С•РЎвЂљ Р С—Р ВµРЎР‚РЎРѓР С•Р Р…Р В°Р В¶Р В°
 			std::optional<float> targetYaw;
 			if (g_cfg.rotateToInput && (x != 0.0f || y != 0.0f)) {
 				if (const auto camYaw = GetCameraYaw()) {
@@ -248,25 +255,29 @@ namespace
 
 			const bool needSneak = g_cfg.tempSneak && !player->IsSneaking();
 			if (!needSneak) {
-				// СѓР¶Рµ РІ СЃРєСЂС‹С‚РЅРѕСЃС‚Рё: РєР°С‚РёРјСЃСЏ СЃСЂР°Р·Сѓ
+				// РЎС“Р В¶Р Вµ Р Р† РЎРѓР С”РЎР‚РЎвЂ№РЎвЂљР Р…Р С•РЎРѓРЎвЂљР С‘: Р С”Р В°РЎвЂљР С‘Р СРЎРѓРЎРЏ РЎРѓРЎР‚Р В°Р В·РЎС“
 				DoRoll(targetYaw, false);
 				return;
 			}
 
-			// 1) РІС…РѕРґРёРј РІ СЃРєСЂС‹С‚РЅРѕСЃС‚СЊ
+			// 1) Р Р†РЎвЂ¦Р С•Р Т‘Р С‘Р С Р Р† РЎРѓР С”РЎР‚РЎвЂ№РЎвЂљР Р…Р С•РЎРѓРЎвЂљРЎРЉ
 			player->AsActorState()->actorState1.sneaking = 1;
 			player->NotifyAnimationGraph(RE::BSFixedString(g_cfg.sneakStartEvent));
 			spdlog::info("temporary sneak start");
 
-			// 2) С‡РµСЂРµР· РїР°СЂСѓ РєР°РґСЂРѕРІ, РєРѕРіРґР° РіСЂР°С„ РїРµСЂРµС€С‘Р» РІ sneak-СЃРѕСЃС‚РѕСЏРЅРёРµ, РѕС‚РїСЂР°РІР»СЏРµРј РїРµСЂРµРєР°С‚
+			// 2) РЎвЂЎР ВµРЎР‚Р ВµР В· Р С—Р В°РЎР‚РЎС“ Р С”Р В°Р Т‘РЎР‚Р С•Р Р†, Р С”Р С•Р С–Р Т‘Р В° Р С–РЎР‚Р В°РЎвЂћ Р С—Р ВµРЎР‚Р ВµРЎв‚¬РЎвЂР В» Р Р† sneak-РЎРѓР С•РЎРѓРЎвЂљР С•РЎРЏР Р…Р С‘Р Вµ, Р С•РЎвЂљР С—РЎР‚Р В°Р Р†Р В»РЎРЏР ВµР С Р С—Р ВµРЎР‚Р ВµР С”Р В°РЎвЂљ
 			RunLater(g_cfg.sneakEnterDelayMs, [this, targetYaw]() { DoRoll(targetYaw, true); });
 		}
 
 		void DoRoll(std::optional<float> a_yaw, bool a_leaveSneak)
 		{
 			auto* player = RE::PlayerCharacter::GetSingleton();
-			if (!player || !player->Is3DLoaded()) {
-				_busy = false;
+			if (!player || !player->Is3DLoaded() || player->IsDead() || player->IsInRagdollState()) {
+				if (a_leaveSneak) {
+					Finish(true, false);
+				} else {
+					_busy = false;
+				}
 				return;
 			}
 
@@ -288,7 +299,7 @@ namespace
 				return;
 			}
 
-			// 3) РїРѕСЃР»Рµ РїРµСЂРµРєР°С‚Р° РІРѕР·РІСЂР°С‰Р°РµРј РІСЃС‘ РєР°Рє Р±С‹Р»Рѕ
+			// 3) Р С—Р С•РЎРѓР В»Р Вµ Р С—Р ВµРЎР‚Р ВµР С”Р В°РЎвЂљР В° Р Р†Р С•Р В·Р Р†РЎР‚Р В°РЎвЂ°Р В°Р ВµР С Р Р†РЎРѓРЎвЂ Р С”Р В°Р С” Р В±РЎвЂ№Р В»Р С•
 			RunLater(g_cfg.rollDurationMs, [this, a_leaveSneak]() { Finish(a_leaveSneak, true); });
 		}
 
@@ -306,13 +317,13 @@ namespace
 
 				if (g_cfg.restoreCamera) {
 					if (auto* cam = RE::PlayerCamera::GetSingleton()) {
-						// РІРµСЂРЅСѓС‚СЊ РІРёРґ, РµСЃР»Рё РёРіСЂР° РµРіРѕ РїРµСЂРµРєР»СЋС‡РёР»Р°
+						// Р Р†Р ВµРЎР‚Р Р…РЎС“РЎвЂљРЎРЉ Р Р†Р С‘Р Т‘, Р ВµРЎРѓР В»Р С‘ Р С‘Р С–РЎР‚Р В° Р ВµР С–Р С• Р С—Р ВµРЎР‚Р ВµР С”Р В»РЎР‹РЎвЂЎР С‘Р В»Р В°
 						if (_wasFirstPerson && !cam->IsInFirstPerson()) {
 							cam->ForceFirstPerson();
 						} else if (!_wasFirstPerson && !cam->IsInThirdPerson()) {
 							cam->ForceThirdPerson();
 						}
-						// РѕС‚ РїРµСЂРІРѕРіРѕ Р»РёС†Р° РїРѕРІРѕСЂРѕС‚ РїРµСЂСЃРѕРЅР°Р¶Р° = РїРѕРІРѕСЂРѕС‚ РєР°РјРµСЂС‹, РІРѕР·РІСЂР°С‰Р°РµРј РµРіРѕ
+						// Р С•РЎвЂљ Р С—Р ВµРЎР‚Р Р†Р С•Р С–Р С• Р В»Р С‘РЎвЂ Р В° Р С—Р С•Р Р†Р С•РЎР‚Р С•РЎвЂљ Р С—Р ВµРЎР‚РЎРѓР С•Р Р…Р В°Р В¶Р В° = Р С—Р С•Р Р†Р С•РЎР‚Р С•РЎвЂљ Р С”Р В°Р СР ВµРЎР‚РЎвЂ№, Р Р†Р С•Р В·Р Р†РЎР‚Р В°РЎвЂ°Р В°Р ВµР С Р ВµР С–Р С•
 						if (_wasFirstPerson) {
 							player->SetHeading(_savedYaw);
 						}
@@ -327,7 +338,7 @@ namespace
 		bool _left{ false };
 		bool _right{ false };
 		std::chrono::steady_clock::time_point _lastDodge{};
-		bool _busy{ false };
+		std::atomic_bool _busy{ false };
 		bool _wasFirstPerson{ false };
 		float _savedYaw{ 0.0f };
 	};
