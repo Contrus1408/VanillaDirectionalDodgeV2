@@ -23,6 +23,9 @@ endif()
 # тесты CommonLib нам не нужны (иначе потребуется Catch2)
 set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
+# VR не нужен: без этого CommonLib требует openvr_api.lib из сабмодуля
+set(ENABLE_SKYRIM_VR OFF CACHE BOOL "" FORCE)
+
 add_subdirectory(extern/CommonLibSSE-NG)
 
 # хелпер add_commonlibsse_plugin() (генерирует SKSEPlugin_Version / SKSEPlugin_Query)
