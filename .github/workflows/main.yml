@@ -12,7 +12,7 @@ permissions:
 
 env:
   # ветка CommonLibSSE-NG, если репозиторий не содержит сабмодуль
-  COMMONLIB_REF: ng
+  COMMONLIB_REF: v11.0.0
   VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite
 
 jobs:
@@ -56,7 +56,8 @@ jobs:
           cmake -S . -B build -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static-md `
+            -DCOMMONLIB_PREBUILT=ON
 
       - name: Build
         shell: pwsh
