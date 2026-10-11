@@ -39,3 +39,5 @@ add_commonlibsse_plugin(
 	USE_ADDRESS_LIBRARY
 	SOURCES src/main.cpp
 )
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/PCH.h")
